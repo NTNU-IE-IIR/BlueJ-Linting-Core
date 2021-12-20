@@ -27,15 +27,15 @@ public class FilesChangeHandler implements ClassListener {
    * @param blueClass the BClass instance where a change was detected in.
    */
   private void processFile(String fileName, BClass blueClass) {
-    if (this.checkerService.isEnabled()) {
-      this.violationManager.removeViolations(fileName);
-
-      try {
+    this.violationManager.removeViolations(fileName);
+    try {
+      // only check the file if it has compiled
+      if (blueClass.isCompiled()) {
         this.checkerService.checkFile(blueClass.getJavaFile(), "utf-8");
-      } catch (Exception e) {
-        // TODO: Show error message/dialog to the user to let them know something is wrong.
-        e.printStackTrace();
       }
+    } catch (Exception e) {
+      // this should never happen, BlueJ project/package has to be existant
+      // in order for BlueJ to trigger the events that uses this method.
     }
   }
 

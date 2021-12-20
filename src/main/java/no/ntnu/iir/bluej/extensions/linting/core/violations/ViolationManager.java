@@ -10,8 +10,8 @@ import java.util.List;
 
 /**
  * Represents a Violation manager.
- * Responsible for managing violations and notifying listeners
- * when violations change.
+ * Responsible for managing violations and notifying listeners when violations change. 
+ * Also handles mapping between file paths and BlueJ Class instances.
  */
 public class ViolationManager {
   private List<ViolationListener> listeners;
@@ -74,6 +74,14 @@ public class ViolationManager {
   }
 
   /**
+   * Clears violations for all files and notifies the listeners of the change.
+   */
+  public void clearViolations() {
+    this.violations.clear();
+    this.notifyListeners();
+  }
+
+  /**
    * Adds a new listener to the list of listeners.
    * 
    * @param listener a ViolationListener to add to the list of listeners.
@@ -117,6 +125,15 @@ public class ViolationManager {
   }
 
   /**
+   * Returns the list of packages currently managed by this ViolationManager.
+   * 
+   * @return the list of packages currently managed by this ViolationManager
+   */
+  public List<BPackage> getBluePackages() {
+    return List.copyOf(this.bluePackages);
+  }
+
+  /**
    * Synchronizes the blueClassMap with the BClasses in the current package.
    * 
    * @throws ProjectNotOpenException if the BlueJ project was not opened
@@ -132,6 +149,13 @@ public class ViolationManager {
     }
   }
 
+  /**
+   * Gets a BlueJ Class instance from a files path.
+   * 
+   * @param filePath the path of the file to find a BlueJ Class from
+   * 
+   * @return the found BlueJ Class instance or null
+   */
   public BClass getBlueClass(String filePath) {
     return this.blueClassMap.get(filePath);
   }

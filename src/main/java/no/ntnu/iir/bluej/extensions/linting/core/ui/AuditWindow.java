@@ -13,6 +13,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TitledPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
@@ -27,7 +28,9 @@ import no.ntnu.iir.bluej.extensions.linting.core.violations.ViolationListener;
 public class AuditWindow extends Stage implements ViolationListener {
   private VBox vbox;
   private String projectDirectory;
+  private Label defaultLabel;
   private WebView ruleWebView;
+  private HBox statusBar;
 
   /**
    * Constructs a new AuditWindow. 
@@ -61,9 +64,12 @@ public class AuditWindow extends Stage implements ViolationListener {
     this.vbox = new VBox();
 
     // display a default label indicating no violations was found
-    Label defaultLabel = new Label("No violations found in this project");
+    defaultLabel = new Label("No violations found in this project");
     defaultLabel.setPadding(new Insets(6));
-    this.vbox.getChildren().add(defaultLabel);
+
+    statusBar = new HBox();
+
+    this.vbox.getChildren().addAll(statusBar, defaultLabel);
 
     ScrollPane violationsPane = new ScrollPane();
     violationsPane.setContent(this.vbox);
@@ -98,25 +104,38 @@ public class AuditWindow extends Stage implements ViolationListener {
   @Override
   public void onViolationsChanged(HashMap<String, List<Violation>> violationsMap) {
     this.vbox.getChildren().clear();
-    violationsMap.forEach((fileName, violations) -> {
-      // only add to window if it's source is from the correct project
-      if (fileName.startsWith(this.projectDirectory)) {
-        ListView<Violation> violationList = new ListView<>();
-        violationList.setCellFactory(violation -> new ViolationCell(
-            this.ruleWebView
-        ));
-  
-        violations.forEach(violationList.getItems()::add);
-  
-        // set list height to its estimated height to hide empty rows
-        violationList
-          .prefHeightProperty()
-          .bind(Bindings.size(violationList.getItems()).multiply(24));
+    this.vbox.getChildren().addAll(this.statusBar);
+    if (violationsMap.size() == 0) {
+      this.vbox.getChildren().addAll(this.defaultLabel);
+    } else {
+      violationsMap.forEach((filePath, violations) -> {
+        // only add to window if it's source is from the correct project
+        if (filePath.startsWith(this.projectDirectory)) {
+          ListView<Violation> violationList = new ListView<>();
+          violationList.setCellFactory(violation -> new ViolationCell(
+              this.ruleWebView
+          ));
 
-        String paneTitle = String.format("%s (%s violations)", fileName, violations.size());
-        TitledPane pane = new TitledPane(paneTitle, violationList);
-        this.vbox.getChildren().add(pane);
-      }
-    });
+          violations.forEach(violationList.getItems()::add);
+
+          // set list height to its estimated height to hide empty rows
+          violationList
+            .prefHeightProperty()
+            .bind(Bindings.size(violationList.getItems()).multiply(24));
+
+          String fileName = filePath.substring(this.projectDirectory.length() + 1);
+          String paneTitle = String.format("%s (%s violations)", fileName, violations.size());
+          TitledPane pane = new TitledPane(paneTitle, violationList);
+          this.vbox.getChildren().add(pane);
+        }
+      });
+    }
+  }
+  
+  /**
+   * Sets the statusBar to render.
+   */
+  public void setStatusBar(HBox statusBar) {
+    this.statusBar = statusBar;
   }
 }

@@ -7,7 +7,7 @@ import bluej.extensions2.editor.TextLocation;
 import java.io.File;
 
 /**
- * Represents a Linting Rule violation.
+ * Represents a Checkstyle Rule violation.
  * Holds details of where a violation occured, a summary of the rule violated 
  * and an optional RuleDefinition that can be shown to the end-user.
  * Should be instantiated when a violation occurs, and passed to appropriate objects.
@@ -17,19 +17,6 @@ public class Violation {
   private BClass blueClass;
   private TextLocation location;
   private RuleDefinition ruleDefinition;
-
-  /**
-   * Constructs a new Violation without a RuleDefinition.
-   * 
-   * @param summary a String containing a brief explanation of the violation
-   * @param blueClass the BlueJ Class file where the violation was found
-   * @param location the TextLocation where the violation was found in the file
-   */
-  public Violation(String summary, BClass blueClass, TextLocation location) {
-    this.summary = summary;
-    this.blueClass = blueClass;
-    this.location = location;
-  }
 
   /**
    * Constructs a new Violation with a RuleDefinition.
