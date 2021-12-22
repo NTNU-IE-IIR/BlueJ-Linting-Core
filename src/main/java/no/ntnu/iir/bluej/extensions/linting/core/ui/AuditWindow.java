@@ -30,15 +30,17 @@ public class AuditWindow extends Stage implements ViolationListener {
   private String projectDirectory;
   private Label defaultLabel;
   private WebView ruleWebView;
-  private HBox statusBar;
+  
+  private static String titlePrefix = "AuditWindow";
+  private static HBox statusBar = new HBox();
 
   /**
    * Constructs a new AuditWindow. 
    * 
-   * @param windowTitle the Title of the Window.
+   * @param bluePackage the blueJ package to open a window for
+   * @param projectDirectory the project directory this auditwindow belongs to
    */
   public AuditWindow(
-      String windowTitle, 
       BPackage bluePackage, 
       String projectDirectory
   ) throws ProjectNotOpenException {
@@ -48,14 +50,14 @@ public class AuditWindow extends Stage implements ViolationListener {
 
     String formattedTitle = String.format(
         "%s - %s", 
-        windowTitle, 
+        titlePrefix, 
         bluePackage.getProject().getName()
     );
 
     this.setTitle(formattedTitle);
     this.initScene();
   }
-  
+
   /**
    * Initiates the AuditWindow scene.
    * Responsible for instantiating panes and setting default content.
@@ -66,8 +68,6 @@ public class AuditWindow extends Stage implements ViolationListener {
     // display a default label indicating no violations was found
     defaultLabel = new Label("No violations found in this project");
     defaultLabel.setPadding(new Insets(6));
-
-    statusBar = new HBox();
 
     this.vbox.getChildren().addAll(statusBar, defaultLabel);
 
@@ -104,7 +104,7 @@ public class AuditWindow extends Stage implements ViolationListener {
   @Override
   public void onViolationsChanged(HashMap<String, List<Violation>> violationsMap) {
     this.vbox.getChildren().clear();
-    this.vbox.getChildren().addAll(this.statusBar);
+    this.vbox.getChildren().addAll(statusBar);
     if (violationsMap.size() == 0) {
       this.vbox.getChildren().addAll(this.defaultLabel);
     } else {
@@ -133,9 +133,21 @@ public class AuditWindow extends Stage implements ViolationListener {
   }
   
   /**
-   * Sets the statusBar to render.
+   * Sets the windows title prefix. 
+   * Typically the name of the extension/tool.
+   * 
+   * @param prefix the windows title prefix
    */
-  public void setStatusBar(HBox statusBar) {
-    this.statusBar = statusBar;
+  public static void setTitlePrefix(String prefix) {
+    AuditWindow.titlePrefix = prefix;
+  }
+
+  /**
+   * Sets the statusBar to render across all AuditWindows.
+   * 
+   * @param statusBar the statusBar to render across all AuditWindows
+   */
+  public static void setStatusBar(HBox statusBar) {
+    AuditWindow.statusBar = statusBar;
   }
 }

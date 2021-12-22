@@ -1,12 +1,9 @@
 package no.ntnu.iir.bluej.extensions.linting.core.handlers;
 
-import bluej.extensions2.BClass;
 import bluej.extensions2.BPackage;
 import bluej.extensions2.event.PackageEvent;
 import bluej.extensions2.event.PackageListener;
-import javafx.scene.layout.HBox;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -23,30 +20,22 @@ import no.ntnu.iir.bluej.extensions.linting.core.violations.ViolationManager;
  */
 public class PackageEventHandler implements PackageListener {
   private HashMap<String, AuditWindow> projectWindowMap;
-  private String windowTitlePrefix;
   private ViolationManager violationManager;
   private ICheckerService checkerService;
-  private HBox statusBar;
 
   /**
    * Instantiates a new handler for Package events.
    * 
-   * @param windowTitlePrefix the title prefix of audit windows spawned
    * @param violationManager the ViolationManager for windows to subscribe to
    * @param checkerService the CheckerService to use for checking files when a package opens
-   * @param statusBar the statusBar to show in the AuditWindow
    */
   public PackageEventHandler(
-      String windowTitlePrefix, 
       ViolationManager violationManager, 
-      ICheckerService checkerService,
-      HBox statusBar
+      ICheckerService checkerService
   ) {
     this.projectWindowMap = new HashMap<>();
-    this.windowTitlePrefix = windowTitlePrefix;
     this.violationManager = violationManager;
     this.checkerService = checkerService;
-    this.statusBar = statusBar;
   }
 
   /**
@@ -95,12 +84,10 @@ public class PackageEventHandler implements PackageListener {
           this.violationManager.addBluePackage(bluePackage);
         } else {
           projectWindow = new AuditWindow(
-              windowTitlePrefix, 
               bluePackage, 
               packagePath
           );
           
-          projectWindow.setStatusBar(this.statusBar);
           this.projectWindowMap.put(packagePath, projectWindow);
           this.violationManager.addListener(projectWindow);
           List.of(bluePackage.getProject().getPackages()).forEach(
