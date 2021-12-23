@@ -40,6 +40,8 @@ public class AuditWindow extends Stage implements ViolationListener {
    * 
    * @param bluePackage the blueJ package to open a window for
    * @param projectDirectory the project directory this auditwindow belongs to
+   * 
+   * @throws ProjectNotOpenException if the bluePackages project was not open
    */
   public AuditWindow(
       BPackage bluePackage, 
