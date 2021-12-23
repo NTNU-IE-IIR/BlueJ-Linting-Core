@@ -1,0 +1,6 @@
+no.ntnu.iir.bluej.extensions.linting.core.checker
+no.ntnu.iir.bluej.extensions.linting.core.editor
+no.ntnu.iir.bluej.extensions.linting.core.handlers
+no.ntnu.iir.bluej.extensions.linting.core.ui
+no.ntnu.iir.bluej.extensions.linting.core.util
+no.ntnu.iir.bluej.extensions.linting.core.violations
