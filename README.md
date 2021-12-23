@@ -9,5 +9,20 @@ It covers datatypes for violations and rule definitions, a ViolationManager that
 
 A default PackageEventHandler and FilesChangeHandler implementation is provided, for handling when projects open/close and when files are changed/removed. These implementations are optional.
 
+
+## Using this library
+Because BlueJ artifacts are not uploaded to Maven Central, we have decided to not publish this library to Maven Central. 
+You can however, utilize [JitPack][3] to install this library. 
+Instructions on how to use this library with your choice of build system can be found [here][4]. 
+
+
+A full example can be found in the [Checkstyle][1] extension repository.
+
+Javadoc for this library can be found [here][5].
+
+
 [1]: https://github.com/NTNU-IE-IIR/BlueJ-Checkstyle-Plugin
 [2]: https://github.com/NTNU-IE-IIR/BlueJ-SonarLint-Plugin
+[3]: https://jitpack.io/
+[4]: https://jitpack.io/#NTNU-IE-IIR/BlueJ-Linting-Core 
+[5]: https://NTNU-IE-IIR.github.io/BlueJ-Linting-Core
