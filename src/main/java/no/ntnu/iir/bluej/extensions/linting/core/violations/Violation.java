@@ -60,6 +60,9 @@ public class Violation {
    * Returns the file where the violation was found.
    * 
    * @return the File where the violation was found
+   * 
+   * @throws ProjectNotOpenException if the BlueJ project was not open
+   * @throws PackageNotFoundException if the BlueJ package was not found
    */
   public File getFile() throws ProjectNotOpenException, PackageNotFoundException {
     return this.blueClass.getJavaFile();

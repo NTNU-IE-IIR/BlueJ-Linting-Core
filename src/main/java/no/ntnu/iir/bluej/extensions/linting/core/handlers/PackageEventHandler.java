@@ -150,6 +150,9 @@ public class PackageEventHandler implements PackageListener {
 
   /**
    * Handles checking all the open packages/projects.
+   * 
+   * @param violationManager the ViolationManager to clear old violations from
+   * @param checkerService the CheckerService implementation to call for new checks
    */
   public static void checkAllPackagesOpen(
       ViolationManager violationManager, 
@@ -165,7 +168,7 @@ public class PackageEventHandler implements PackageListener {
               File sourceFile = null;
 
               try {
-                // ignore compiled files
+                // ignore non-compiled files
                 if (blueClass.isCompiled()) {
                   sourceFile = blueClass.getJavaFile();
                 }

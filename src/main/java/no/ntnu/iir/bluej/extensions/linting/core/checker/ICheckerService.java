@@ -9,10 +9,21 @@ import java.util.List;
  */
 public interface ICheckerService {
 
+  /**
+   * Enables the CheckerService.
+   */
   void enable();
 
+  /**
+   * Disables the CheckerService.
+   */
   void disable();
 
+  /**
+   * Checks whether the CheckerService is enabled or not.
+   * 
+   * @return whether the CheckerService is enabled or not
+   */
   boolean isEnabled();
 
   /**

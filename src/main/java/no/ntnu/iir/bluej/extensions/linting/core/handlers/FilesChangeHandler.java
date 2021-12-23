@@ -15,6 +15,12 @@ public class FilesChangeHandler implements ClassListener {
   private ViolationManager violationManager;
   private ICheckerService checkerService;
 
+  /**
+   * Constructs a new FilesChangeHandler. 
+   * 
+   * @param violationManager the ViolationManager to clear/remove old violations from
+   * @param checkerService the CheckerService implemenentation to call for new checks
+   */
   public FilesChangeHandler(ViolationManager violationManager, ICheckerService checkerService) {
     this.violationManager = violationManager;
     this.checkerService = checkerService;

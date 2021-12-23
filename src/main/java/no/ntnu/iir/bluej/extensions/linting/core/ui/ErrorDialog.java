@@ -14,6 +14,8 @@ public class ErrorDialog extends Alert {
   /**
    * Constructs a new Alert of type Error.
    * 
+   * @param header the dialogs header
+   * @param description a description describing the error
    * @param content the content text to display in the dialog
    */
   public ErrorDialog(String header, String description, String content) {

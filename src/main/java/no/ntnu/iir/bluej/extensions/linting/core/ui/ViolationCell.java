@@ -41,9 +41,10 @@ public class ViolationCell extends ListCell<Violation> {
     super();
 
     this.iconBox = new HBox();
-    this.iconBox.setMinWidth(36);
-    this.iconBox.setMaxWidth(36);
-    this.iconBox.setAlignment(Pos.CENTER_RIGHT);
+    this.iconBox.setStyle("-fx-padding: 0px 0px 0px 18px;");
+    this.iconBox.setMinWidth(18);
+    this.iconBox.setAlignment(Pos.CENTER);
+    this.iconBox.setSpacing(2);
     
     this.summaryLabel = new Label();
     this.hintLabel = new Label();

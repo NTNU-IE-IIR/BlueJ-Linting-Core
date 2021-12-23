@@ -11,6 +11,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.HBox;
@@ -39,6 +40,8 @@ public class AuditWindow extends Stage implements ViolationListener {
    * 
    * @param bluePackage the blueJ package to open a window for
    * @param projectDirectory the project directory this auditwindow belongs to
+   * 
+   * @throws ProjectNotOpenException if the bluePackages project was not open
    */
   public AuditWindow(
       BPackage bluePackage, 
@@ -69,7 +72,9 @@ public class AuditWindow extends Stage implements ViolationListener {
     defaultLabel = new Label("No violations found in this project");
     defaultLabel.setPadding(new Insets(6));
 
-    this.vbox.getChildren().addAll(statusBar, defaultLabel);
+    Separator separator = new Separator(Orientation.HORIZONTAL);
+  
+    this.vbox.getChildren().addAll(statusBar, separator, defaultLabel);
 
     ScrollPane violationsPane = new ScrollPane();
     violationsPane.setContent(this.vbox);
@@ -104,7 +109,7 @@ public class AuditWindow extends Stage implements ViolationListener {
   @Override
   public void onViolationsChanged(HashMap<String, List<Violation>> violationsMap) {
     this.vbox.getChildren().clear();
-    this.vbox.getChildren().addAll(statusBar);
+    this.vbox.getChildren().addAll(statusBar, new Separator(Orientation.HORIZONTAL));
     if (violationsMap.size() == 0) {
       this.vbox.getChildren().addAll(this.defaultLabel);
     } else {

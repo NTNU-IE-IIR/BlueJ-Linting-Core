@@ -40,6 +40,11 @@ public class RuleDefinition {
     this.type = type;
   }
 
+  /**
+   * Sets the class global IconMapper to use for mapping icons.
+   * 
+   * @param iconMapper the IconMapper implementation to use for mapping icons
+   */
   public static void setIconMapper(IconMapper iconMapper) {
     RuleDefinition.iconMapper = iconMapper;
   }
