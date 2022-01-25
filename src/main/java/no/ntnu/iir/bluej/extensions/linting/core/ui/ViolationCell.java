@@ -30,14 +30,14 @@ public class ViolationCell extends ListCell<Violation> {
   private Label summaryLabel;
   private Label hintLabel;
   private Violation violation;
-  private WebView ruleWebView;
+  private RuleWebView ruleWebView;
 
   /**
    * Instantiates a new Violation Cell.
    * 
    * @param ruleWebView the WebView to display a violations rule description to
    */
-  public ViolationCell(WebView ruleWebView) {
+  public ViolationCell(RuleWebView ruleWebView) {
     super();
 
     this.iconBox = new HBox();
@@ -126,13 +126,12 @@ public class ViolationCell extends ListCell<Violation> {
         RuleDefinition definition = violation.getRuleDefinition();
   
         if (definition.getDescription() == null) {
-          this.ruleWebView.getEngine().loadContent(
+          this.ruleWebView.setContent(
               "The selected violation does not have a rule description..."
           );
         } else {
-          ruleWebView.getEngine().loadContent(
-              definition.getDescription(),
-              "text/html"
+          this.ruleWebView.setContent(
+              definition.getDescription()
           );
         }
       }
