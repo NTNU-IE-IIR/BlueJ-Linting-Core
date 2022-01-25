@@ -46,8 +46,8 @@ public class RuleWebView {
       try {
         // not the cleanest way to remove the view but should
         // work with the current uses
-        if (this.webView.getParent() instanceof SplitPane) {
-          SplitPane parent = ((SplitPane) this.webView.getParent());
+        if (this.webView.getParent().getParent() instanceof SplitPane) {
+          SplitPane parent = (SplitPane) this.webView.getParent().getParent();
           parent.getItems().remove(this.webView);
           this.initWebView();
           parent.getItems().add(this.webView);
