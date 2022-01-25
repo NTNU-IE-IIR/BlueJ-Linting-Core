@@ -16,7 +16,6 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import no.ntnu.iir.bluej.extensions.linting.core.violations.Violation;
 import no.ntnu.iir.bluej.extensions.linting.core.violations.ViolationListener;
@@ -30,7 +29,7 @@ public class AuditWindow extends Stage implements ViolationListener {
   private VBox vbox;
   private String projectDirectory;
   private Label defaultLabel;
-  private WebView ruleWebView;
+  private RuleWebView ruleWebView;
   
   private static String titlePrefix = "AuditWindow";
   private static HBox statusBar = new HBox();
@@ -81,17 +80,17 @@ public class AuditWindow extends Stage implements ViolationListener {
     violationsPane.setFitToWidth(true);
 
     // set up web view for rules and set default content
-    this.ruleWebView = new WebView();
-    this.ruleWebView.getEngine().loadContent("Select a rule to see its explanation here...");
-    this.ruleWebView.getEngine().setUserStyleSheetLocation(
+    this.ruleWebView = new RuleWebView();
+    this.ruleWebView.setContent("Select a rule to see its explanation here...");
+    RuleWebView.setStylesheet(
         "data:,body { font: 12px Segoe UI, Arial; }"
     );
 
     // bind webview to the size of the pane
     ScrollPane rulePane = new ScrollPane();
-    this.ruleWebView.prefWidthProperty().bind(rulePane.widthProperty());
-    this.ruleWebView.prefHeightProperty().bind(rulePane.heightProperty());
-    rulePane.setContent(this.ruleWebView);
+    this.ruleWebView.getWebView().prefWidthProperty().bind(rulePane.widthProperty());
+    this.ruleWebView.getWebView().prefHeightProperty().bind(rulePane.heightProperty());
+    rulePane.setContent(this.ruleWebView.getWebView());
 
     SplitPane splitPane = new SplitPane();
     splitPane.setDividerPositions(0.8f); // violations should by default take up 80%

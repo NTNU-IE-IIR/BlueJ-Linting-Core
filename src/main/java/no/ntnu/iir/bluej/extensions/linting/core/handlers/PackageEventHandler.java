@@ -95,7 +95,6 @@ public class PackageEventHandler implements PackageListener {
           );
           this.checkerService.enable();
           this.violationManager.syncBlueClassMap();
-          projectWindow.show();
         }
         
         PackageEventHandler.checkAllPackagesOpen(this.violationManager, this.checkerService);

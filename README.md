@@ -1,4 +1,6 @@
 # BlueJ-Linting-Core
+![release](https://img.shields.io/github/v/release/NTNU-IE-IIR/BlueJ-Linting-Core)
+![license](https://img.shields.io/github/license/NTNU-IE-IIR/BlueJ-Linting-Core)
 
 A core library designed to be used for writing linting extensions for the BlueJ IDE.
 
@@ -19,6 +21,12 @@ Instructions on how to use this library with your choice of build system can be 
 A full example can be found in the [Checkstyle][1] extension repository.
 
 Javadoc for this library can be found [here][5].
+
+## Issues
+Are you having issues using this library? 
+
+## Contributing
+
 
 
 [1]: https://github.com/NTNU-IE-IIR/BlueJ-Checkstyle-Plugin
