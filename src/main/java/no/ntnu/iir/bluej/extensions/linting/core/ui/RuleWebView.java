@@ -2,7 +2,10 @@ package no.ntnu.iir.bluej.extensions.linting.core.ui;
 
 import java.awt.Desktop;
 import java.net.URI;
+import javax.swing.ScrollPaneConstants;
 import javafx.beans.value.ObservableValue;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
@@ -45,10 +48,16 @@ public class RuleWebView {
       try {
         // not the cleanest way to remove the view but should
         // work with the current uses
-        Pane parent = ((Pane) this.webView.getParent());
-        parent.getChildren().remove(this.webView);
-        this.initWebView();
-        parent.getChildren().add(this.webView);
+        if (this.webView.getParent().getParent().getParent() instanceof ScrollPane) {
+          ScrollPane parent = (ScrollPane) this.webView.getParent().getParent().getParent();
+          this.initWebView();
+          parent.setContent(this.webView);
+        } else {
+          Pane parent = ((Pane) this.webView.getParent());
+          parent.getChildren().remove(this.webView);
+          this.initWebView();
+          parent.getChildren().add(this.webView);
+        }
         Desktop desktop = Desktop.getDesktop();
         desktop.browse(new URI(newValue));
       } catch (Exception e) {
