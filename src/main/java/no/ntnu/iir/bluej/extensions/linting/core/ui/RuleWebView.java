@@ -2,10 +2,8 @@ package no.ntnu.iir.bluej.extensions.linting.core.ui;
 
 import java.awt.Desktop;
 import java.net.URI;
-import javax.swing.ScrollPaneConstants;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
@@ -35,13 +33,18 @@ public class RuleWebView {
 
   /**
    * Handles when the location is changed. 
-   * Responsible for preventing navigation to external pages, and opening them in the browser instead.
+   * Responsible for preventing navigation to external pages, 
+   * and opening them in the browser instead.
    * 
    * @param obs the ObservableValue changed
    * @param oldValue the previous value
-   * @param newValue 
+   * @param newValue the new value
    */
-  private void handleLocationChanged(ObservableValue<? extends String> obs, String oldValue, String newValue) {
+  private void handleLocationChanged(
+      ObservableValue<? extends String> obs, 
+      String oldValue, 
+      String newValue
+  ) {
     // newValue is "" when loading a rule
     // oldValue guard to prevent from opening multiple webpages
     if (!newValue.equals("") && oldValue.equals("")) {
@@ -52,6 +55,8 @@ public class RuleWebView {
           ScrollPane parent = (ScrollPane) this.webView.getParent().getParent().getParent();
           this.initWebView();
           parent.setContent(this.webView);
+          this.webView.prefWidthProperty().bind(parent.widthProperty());
+          this.webView.prefHeightProperty().bind(parent.heightProperty());
         } else {
           Pane parent = ((Pane) this.webView.getParent());
           parent.getChildren().remove(this.webView);
@@ -89,6 +94,11 @@ public class RuleWebView {
     this.getWebEngine().loadContent(this.content, "text/html");
   }
 
+  /**
+   * Sets the stylesheet for all RuleWebViews.
+   * 
+   * @param stylesheet the location of the stylesheet (or an inline stylesheet)
+   */
   public static void setStylesheet(String stylesheet) {
     if (stylesheet != null) {
       RuleWebView.stylesheet = stylesheet;
