@@ -4,6 +4,7 @@ import bluej.extensions2.BPackage;
 import bluej.extensions2.event.PackageEvent;
 import bluej.extensions2.event.PackageListener;
 import java.io.File;
+import java.nio.file.FileSystems;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -138,7 +139,7 @@ public class PackageEventHandler implements PackageListener {
 
     while (pathIterator.hasNext() && !hasOpenParent) {
       String currentPath = pathIterator.next();
-      if (packagePath.startsWith(currentPath)) {
+      if (packagePath.startsWith(currentPath + FileSystems.getDefault().getSeparator())) {
         hasOpenParent = true;
         parentWindowKey = currentPath;
       }
