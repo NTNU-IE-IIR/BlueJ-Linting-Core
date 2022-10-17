@@ -1,11 +1,12 @@
 package no.ntnu.iir.bluej.extensions.linting.core.ui;
 
 import bluej.extensions2.editor.TextLocation;
-import com.google.common.base.Predicates;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
+
 import java.net.URL;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -90,8 +91,10 @@ public class ViolationCell extends ListCell<Violation> {
         severityIconView.setFitWidth(16);
       }
 
-      List<ImageView> icons = Lists.newArrayList(typeIconView, severityIconView);
-      Iterables.removeIf(icons, Predicates.isNull());
+      List<ImageView> icons = Stream.of(typeIconView, severityIconView)
+          .filter(Objects::nonNull)
+          .toList();
+
       this.iconBox.getChildren().setAll(icons);
 
       TextLocation location = violation.getLocation();
