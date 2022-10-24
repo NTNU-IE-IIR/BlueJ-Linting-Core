@@ -2,8 +2,11 @@ package no.ntnu.iir.bluej.extensions.linting.core.ui;
 
 import bluej.extensions2.BPackage;
 import bluej.extensions2.ProjectNotOpenException;
+
 import java.util.HashMap;
 import java.util.List;
+
+import javafx.animation.PauseTransition;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -17,6 +20,7 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import no.ntnu.iir.bluej.extensions.linting.core.violations.Violation;
 import no.ntnu.iir.bluej.extensions.linting.core.violations.ViolationListener;
 
@@ -30,7 +34,11 @@ public class AuditWindow extends Stage implements ViolationListener {
   private String projectDirectory;
   private Label defaultLabel;
   private RuleWebView ruleWebView;
+  private PauseTransition debouncer;
   
+  // the time in milliseconds to debounce the update render
+  private static final int DEBOUNCE_DELAY = 100;
+
   private static String titlePrefix = "AuditWindow";
   private static HBox statusBar = new HBox();
 
@@ -56,6 +64,7 @@ public class AuditWindow extends Stage implements ViolationListener {
         bluePackage.getProject().getName()
     );
 
+    this.debouncer = new PauseTransition(Duration.millis(DEBOUNCE_DELAY));
     this.setTitle(formattedTitle);
     this.initScene();
   }
@@ -105,8 +114,7 @@ public class AuditWindow extends Stage implements ViolationListener {
    * Update the Violations pane to reflect the new truth of violations.
    * Adds a new TitledPane for each entry, containing a ListView of Violations.
    */
-  @Override
-  public void onViolationsChanged(HashMap<String, List<Violation>> violationsMap) {
+  private void updateViolations(HashMap<String, List<Violation>> violationsMap) {
     this.vbox.getChildren().clear();
     this.vbox.getChildren().addAll(statusBar, new Separator(Orientation.HORIZONTAL));
     if (violationsMap.size() == 0) {
@@ -127,13 +135,22 @@ public class AuditWindow extends Stage implements ViolationListener {
             .prefHeightProperty()
             .bind(Bindings.size(violationList.getItems()).multiply(24));
 
-          String fileName = filePath.substring(this.projectDirectory.length() + 1);
+          String fileName = filePath.substring(this.projectDirectory.length());
           String paneTitle = String.format("%s (%s violations)", fileName, violations.size());
           TitledPane pane = new TitledPane(paneTitle, violationList);
           this.vbox.getChildren().add(pane);
         }
       });
     }
+  }
+
+
+  @Override
+  public void onViolationsChanged(HashMap<String, List<Violation>> violationsMap) {
+    // sole purpose of this is to debounce the update.
+    // will prevent rendering 1 time per violation added etc
+    this.debouncer.setOnFinished(e -> this.updateViolations(violationsMap));
+    this.debouncer.playFromStart();
   }
   
   /**

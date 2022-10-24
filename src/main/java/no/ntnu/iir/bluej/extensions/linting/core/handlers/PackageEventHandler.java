@@ -4,14 +4,13 @@ import bluej.extensions2.BPackage;
 import bluej.extensions2.event.PackageEvent;
 import bluej.extensions2.event.PackageListener;
 import java.io.File;
-import java.nio.file.FileSystems;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import no.ntnu.iir.bluej.extensions.linting.core.checker.ICheckerService;
 import no.ntnu.iir.bluej.extensions.linting.core.ui.AuditWindow;
+import no.ntnu.iir.bluej.extensions.linting.core.util.PathResolver;
 import no.ntnu.iir.bluej.extensions.linting.core.violations.ViolationManager;
 
 /**
@@ -74,32 +73,23 @@ public class PackageEventHandler implements PackageListener {
    */
   public void openProjectWindow(BPackage bluePackage) {
     try {
-      String packagePath = bluePackage.getDir().getPath();
-      AuditWindow projectWindow = projectWindowMap.get(packagePath);
+      String projectPath = PathResolver.projectPath(bluePackage);
+      AuditWindow projectWindow = projectWindowMap.get(projectPath);
 
       if (projectWindow == null) {
-        
-        String parentKey = this.findRootPackageKey(packagePath);
+        projectWindow = new AuditWindow(bluePackage, projectPath);
 
-        if (parentKey != null) {
-          this.violationManager.addBluePackage(bluePackage);
-        } else {
-          projectWindow = new AuditWindow(
-              bluePackage, 
-              packagePath
-          );
-          
-          this.projectWindowMap.put(packagePath, projectWindow);
-          this.violationManager.addListener(projectWindow);
-          List.of(bluePackage.getProject().getPackages()).forEach(
-              this.violationManager::addBluePackage
-          );
-          this.checkerService.enable();
-          this.violationManager.syncBlueClassMap();
-        }
+        this.projectWindowMap.put(projectPath, projectWindow);
+        this.violationManager.addListener(projectWindow);
+
+        List.of(bluePackage.getProject().getPackages()).forEach(
+            this.violationManager::addBluePackage
+        );
+        
+        this.checkerService.enable();
+        this.violationManager.syncBlueClassMap();
         
         PackageEventHandler.checkAllPackagesOpen(this.violationManager, this.checkerService);
-
       }
 
     } catch (Exception e) {
@@ -114,8 +104,7 @@ public class PackageEventHandler implements PackageListener {
    */
   public void showProjectWindow(BPackage bluePackage) {
     try {
-      String packagePath = bluePackage.getDir().getPath();
-      String projectKey = this.findRootPackageKey(packagePath);
+      String projectKey = PathResolver.projectPath(bluePackage);
       AuditWindow projectWindow = this.projectWindowMap.get(projectKey);
 
       if (projectWindow != null) {
@@ -125,29 +114,7 @@ public class PackageEventHandler implements PackageListener {
       e.printStackTrace();
     }
   }
-
-  /**
-   * Checks if there is a root package open, if one is open it returns its key.
-   * 
-   * @param packagePath the path of the BlueJ package
-   * @return the root package key, or null if non-existant
-   */
-  private String findRootPackageKey(String packagePath) {
-    Iterator<String> pathIterator = this.projectWindowMap.keySet().iterator();
-    String parentWindowKey = null;
-    boolean hasOpenParent = false;
-
-    while (pathIterator.hasNext() && !hasOpenParent) {
-      String currentPath = pathIterator.next();
-      if (packagePath.startsWith(currentPath + FileSystems.getDefault().getSeparator())) {
-        hasOpenParent = true;
-        parentWindowKey = currentPath;
-      }
-    }
-
-    return parentWindowKey;
-  }
-
+  
   /**
    * Handles checking all the open packages/projects.
    * 
