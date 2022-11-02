@@ -1,9 +1,11 @@
 name: Publish Javadoc
 
 on:
-  push:
-    branches:
-      - "main"
+  workflow_run:
+    workflows:
+      - Publish release
+    types:
+      - completed
   
 jobs:
   deploy-docs:
