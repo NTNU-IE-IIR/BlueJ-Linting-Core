@@ -1,11 +1,7 @@
 name: Publish Javadoc
 
 on:
-  workflow_run:
-    workflows:
-      - Publish release
-    types:
-      - completed
+  workflow_dispatch:
   
 jobs:
   deploy-docs:

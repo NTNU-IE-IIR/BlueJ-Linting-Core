@@ -45,3 +45,14 @@ jobs:
           name: v${{ steps.get_version.outputs.version }}
           body: "**Changes:**"
           files: ./target/*-${{ steps.get_version.outputs.version }}.jar
+
+      - name: Trigger javadoc workflow
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'javadoc.yml',
+              ref: 'main',
+            })
