@@ -1,0 +1,58 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+A core Java library for building linting extensions for the BlueJ IDE (BlueJ Extension API 2). It is consumed by the [Checkstyle](https://github.com/NTNU-IE-IIR/BlueJ-Checkstyle-Plugin) and [SonarLint](https://github.com/NTNU-IE-IIR/BlueJ-SonarLint-Plugin) extensions for BlueJ. This repo is not a runnable extension itself — it provides shared datatypes and UI plumbing that consuming extensions wire up.
+
+## Build
+
+```bash
+mvn package        # compile and produce the jar in target/
+mvn javadoc:javadoc # generate Javadoc into target/site/apidocs
+```
+
+There is no test suite in this repo (no `src/test`), so there is no `mvn test` target to run.
+
+### Dependency notes
+
+- `bluejext2` (BlueJ's extension API jar) is **not on Maven Central**. It's resolved from the `lib/` directory, which is configured as a local Maven repository (`repositories` block in `pom.xml`, id `local_repository`). If this dependency fails to resolve, check `lib/bluej/bluejext2/`.
+- JavaFX (`javafx-controls`, `javafx-web`) is declared with `<scope>provided</scope>` because BlueJ bundles its own JavaFX runtime at runtime. The `javafx.version` property is pinned to the closest available Maven version to what BlueJ actually ships (see the comment block at the top of `pom.xml` for the exact BlueJ-bundled Java/JavaFX versions this targets).
+- Java target is 21 (`maven.compiler.source`/`target`), matching BlueJ 6.0.0's bundled JDK (BlueJ 6.0.0 ships Java 21.0.6 / JavaFX 23.0.2+3; `javafx.version` is set to `23.0.2`).
+- This library itself is not published to Maven Central (BlueJ artifacts can't be); consumers use [JitPack](https://jitpack.io/#NTNU-IE-IIR/BlueJ-Linting-Core) instead.
+
+## Architecture
+
+All code lives under `no.ntnu.iir.bluej.extensions.linting.core`, split into five packages that form a pipeline: a checker implementation (provided by the consuming extension) produces `Violation`s, which flow into a `ViolationManager`, which notifies UI listeners.
+
+- **`checker/ICheckerService`** — the extension point. Consuming extensions (Checkstyle, SonarLint) implement this interface to actually run their linter over files. This library only defines the contract (`enable`/`disable`/`isEnabled`/`checkFile`/`checkFiles`); it has no linting logic of its own.
+
+- **`violations/`** — the core data model and pub/sub hub.
+  - `Violation` — one lint finding: a summary, the BlueJ `BClass` it was found in, a `TextLocation`, and an optional `RuleDefinition`.
+  - `RuleDefinition` — display metadata for a rule (title, id, description, severity/type icons). Icon lookup is delegated to a class-static `IconMapper` that must be injected via `RuleDefinition.setIconMapper(...)` before icons can resolve — this is set once by the consuming extension at startup.
+  - `ViolationManager` — the source of truth. Stores violations keyed by file path, notifies registered `ViolationListener`s on any change, and separately tracks the open BlueJ `BPackage`s and a `filePath -> BClass` map (`syncBlueClassMap()`) used to resolve BlueJ class handles back from file paths.
+  - `ViolationListener` — implemented by UI components (notably `AuditWindow`) that want to react when the violation map changes.
+
+- **`handlers/`** — BlueJ event glue. These implement BlueJ's `PackageListener`/`ClassListener` interfaces and are meant to be registered with BlueJ by the consuming extension.
+  - `PackageEventHandler` — reacts to project/package open/close. Opens one `AuditWindow` per **root** project (tracked in `projectWindowMap`, keyed by directory path; `findRootPackageKey` walks the map to detect that a newly-opened package is a sub-package of an already-open root, in which case no new window is created — it just registers the sub-package with the existing `ViolationManager`). On a root package open it enables the `ICheckerService` and triggers a full re-check via the static `checkAllPackagesOpen`.
+  - `FilesChangeHandler` — reacts to individual class file changes/renames/removal, clearing stale violations from the `ViolationManager` and re-triggering `ICheckerService.checkFile` for compiled files only.
+  - Both handlers swallow `ProjectNotOpenException`/`PackageNotFoundException` on the assumption that BlueJ only fires these events while the project/package is open — treat these as truly-should-never-happen paths, not places to add real error handling.
+
+- **`ui/`** — JavaFX views, all optional/pluggable by the consuming extension.
+  - `AuditWindow` — the main violations window (a `Stage`), one per open BlueJ project. Implements `ViolationListener`; rebuilds its violation list (grouped by file, in `TitledPane`s) every time `onViolationsChanged` fires. Has a shared static `statusBar` and `titlePrefix` that consuming extensions customize once via `setStatusBar`/`setTitlePrefix`.
+  - `ViolationCell` — `ListView` cell renderer for a single `Violation`.
+  - `RuleWebView` — wraps a JavaFX `WebView` to render a `RuleDefinition`'s HTML description; `AuditWindow` binds its size to the containing pane.
+  - `ErrorDialog` — generic error dialog helper.
+
+- **`editor/EditorNotifier`** — static utility that pushes a `Violation`'s location into the BlueJ editor (`JavaEditor`), opening the editor and selecting the offending line/column. Stateless, not instantiable.
+
+- **`util/IconMapper`** — interface for mapping a severity/type name to an icon `URL`; implemented by the consuming extension and injected into `RuleDefinition` (see above).
+
+### Key design point for future changes
+
+This library deliberately does no linting itself and holds no linter-specific config. `ICheckerService` and `IconMapper` are the two seams where a consuming extension plugs in its own logic; everything else (event wiring, violation storage/notification, the audit window UI) is meant to be reused as-is. When changing shared classes (`Violation`, `RuleDefinition`, `ViolationManager`, the handlers), keep in mind both consumers (Checkstyle and SonarLint extensions) depend on the public API shape.
+
+## CI
+
+`.github/workflows/release.yml` runs on PRs merged into `main`: builds with `mvn package`, generates Javadoc and publishes it to the `docs` branch (GitHub Pages), extracts a version from `release/*` or `hotfix/*` branch names to create a GitHub Release with the built jar, and auto-merges `main` back into `develop`. There is no CI step that runs on every push/PR open — only on merge.
