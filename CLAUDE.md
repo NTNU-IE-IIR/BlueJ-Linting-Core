@@ -53,6 +53,20 @@ All code lives under `no.ntnu.iir.bluej.extensions.linting.core`, split into fiv
 
 This library deliberately does no linting itself and holds no linter-specific config. `ICheckerService` and `IconMapper` are the two seams where a consuming extension plugs in its own logic; everything else (event wiring, violation storage/notification, the audit window UI) is meant to be reused as-is. When changing shared classes (`Violation`, `RuleDefinition`, `ViolationManager`, the handlers), keep in mind both consumers (Checkstyle and SonarLint extensions) depend on the public API shape.
 
-## CI
+## GitHub Actions
 
-`.github/workflows/release.yml` runs on PRs merged into `main`: builds with `mvn package`, generates Javadoc and publishes it to the `docs` branch (GitHub Pages), extracts a version from `release/*` or `hotfix/*` branch names to create a GitHub Release with the built jar, and auto-merges `main` back into `develop`. There is no CI step that runs on every push/PR open — only on merge.
+There is a single workflow, `.github/workflows/release.yml`. It only triggers on a **pull request closed against `main`**, and every job is additionally gated on `github.event.pull_request.merged == true` — so nothing runs on a merely-closed/rejected PR, and nothing runs on ordinary pushes or PR-opened events. In other words: there is no CI build/check that runs while a PR is open; the only automation is what happens right after a PR merges into `main`.
+
+On merge, three jobs run in parallel:
+
+- **`create-release`** — runs `mvn -B package`, then reads the merged PR's source branch name (`github.event.pull_request.head.ref`) to derive a version string: a `release/<version>` or `hotfix/<version>` branch name has the prefix stripped to get `<version>`, exported as `RELEASE_VERSION`. It then publishes a GitHub Release tagged `v<RELEASE_VERSION>`, attaching the built jar matched by `./target/*-<RELEASE_VERSION>.jar`. If the PR's branch isn't named `release/...` or `hotfix/...`, neither "extract version" step runs, `RELEASE_VERSION` stays unset, and the release step will fail/misbehave — so this job only makes sense for release/hotfix PRs.
+- **`deploy-docs`** — runs `mvn javadoc:javadoc` and publishes `target/site/apidocs` to the `docs` branch (which GitHub Pages serves). This runs for **every** merged PR into `main`, not just release/hotfix ones, so Javadoc on the `docs` branch always tracks the latest `main`.
+- **`automerge`** — checks out `develop`, merges `main` into it with `--no-ff`, and pushes. Keeps `develop` from drifting behind `main` after a release/hotfix lands. This will fail (and needs manual conflict resolution) if `main` and `develop` have diverged in a conflicting way.
+
+### How to cut a release
+
+1. Branch from `main` (or wherever the release should be cut from) named exactly `release/<version>` (e.g. `release/1.2.0`) for a normal release, or `hotfix/<version>` for a hotfix.
+2. Bump `<version>` in `pom.xml` to match the branch's `<version>` (the workflow does not do this for you — it only uses the branch name to name the GitHub Release and locate the jar via `target/*-<version>.jar`, which comes from the jar plugin using the `pom.xml` version).
+3. Open a PR into `main` and merge it. On merge, CI builds the jar, cuts a GitHub Release `v<version>` with the jar attached, redeploys Javadoc to the `docs` branch, and auto-merges `main` back into `develop`.
+
+Merging a PR into `main` from a branch not named `release/*` or `hotfix/*` will still run `deploy-docs` and `automerge`, but `create-release` will not produce a usable release (no version gets extracted).
