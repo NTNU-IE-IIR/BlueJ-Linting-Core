@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A core Java library for building linting extensions for the BlueJ IDE (BlueJ Extension API 2). It is consumed by the [Checkstyle](https://github.com/NTNU-IE-IIR/BlueJ-Checkstyle-Plugin) and [SonarLint](https://github.com/NTNU-IE-IIR/BlueJ-SonarLint-Plugin) extensions for BlueJ. This repo is not a runnable extension itself — it provides shared datatypes and UI plumbing that consuming extensions wire up.
 
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for a full class diagram plus sequence diagrams for the startup flow and the lint-request flow — read it before making structural changes to the classes described in the Architecture section below.
+
 ## Build
 
 ```bash
@@ -70,3 +72,12 @@ On merge, three jobs run in parallel:
 3. Open a PR into `main` and merge it. On merge, CI builds the jar, cuts a GitHub Release `v<version>` with the jar attached, redeploys Javadoc to the `docs` branch, and auto-merges `main` back into `develop`.
 
 Merging a PR into `main` from a branch not named `release/*` or `hotfix/*` will still run `deploy-docs` and `automerge`, but `create-release` will not produce a usable release (no version gets extracted).
+
+## Scripts in `tools/`
+
+Both scripts do the same thing — install BlueJ's bundled `bluejext2.jar` into this project's local Maven repository at `lib/` (the `local_repository` in `pom.xml`) via `mvn install:install-file` — one per OS, since BlueJ's own install layout differs between them:
+
+- **`updateBlueJdeps.ps1`** (Windows/PowerShell) — reads the jar from `C:\Program Files\BlueJ\lib\bluejext2.jar`. Usage: `./updateBlueJdeps.ps1 -Version <n.n.n>`.
+- **`updateBlueJdeps.sh`** (macOS/zsh) — same behavior, ported for macOS where BlueJ ships as a `.app` bundle (via jpackage) rather than a fixed Program Files path. Usage: `./updateBlueJdeps.sh <version> [installDir]`. Since the exact jar location inside `BlueJ.app` can vary by release, it searches a few common candidate paths under `/Applications/BlueJ.app` and `~/Applications/BlueJ.app` and falls back to erroring out with instructions to pass the correct directory as `[installDir]` if none are found — confirm the real path with `find /Applications/BlueJ.app -name 'bluejext2.jar'` if the default search fails.
+
+Run either script whenever `pom.xml`'s `bluejext2` version is bumped to match a newer BlueJ install, so the local jar in `lib/` stays in sync with what the `pom.xml` dependency declares.
