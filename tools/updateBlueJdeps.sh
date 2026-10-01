@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 #
 # macOS port of updateBlueJdeps.ps1.
-# Installs BlueJ's bundled dependency jars (e.g. bluejext2.jar) into this
+# Installs BlueJ's bundled dependency jars (e.g. Bluej.jar) into this
 # project's local Maven repository under lib/, so pom.xml's
 # <repositories><repository id="local_repository">...</repository> can resolve them.
 #
@@ -9,7 +9,7 @@
 #   ./updateBlueJdeps.sh <version> [installDir]
 #
 #   <version>    Required. Version to install the jar(s) under, e.g. 6.0.0
-#                (should match the version used in pom.xml's bluejext2 dependency).
+#                (should match the version used in pom.xml's bluej dependency).
 #   [installDir] Optional. Path to the BlueJ.app bundle's lib directory containing
 #                the jar(s) to install. If omitted, a few common locations for a
 #                BlueJ.app installed under /Applications are tried automatically.
@@ -36,17 +36,14 @@ fi
 VERSION="$1"
 
 # List of jar files to update (matches updateBlueJdeps.ps1).
-JAR_DEPENDENCIES=("bluejext2")
+JAR_DEPENDENCIES=("bluej")
 
 # Candidate locations for the jars inside a BlueJ.app bundle on macOS.
 # BlueJ.app's exact internal layout can vary between releases (it's packaged
 # with jpackage), so we try the known layouts in order rather than assuming one.
 DEFAULT_INSTALL_DIRS=(
-  "/Applications/BlueJ.app/Contents/Resources/lib"
-  "/Applications/BlueJ.app/Contents/app/lib"
-  "/Applications/BlueJ.app/Contents/app"
-  "$HOME/Applications/BlueJ.app/Contents/Resources/lib"
-  "$HOME/Applications/BlueJ.app/Contents/app/lib"
+  "/Applications/BlueJ.app/Contents/Java"
+  "$HOME/Applications/BlueJ.app/Contents/Java"
 )
 
 if [[ $# -ge 2 && -n "${2:-}" ]]; then
