@@ -14,9 +14,9 @@
   Link the project to the SCM (GitHub) to enable the use of the Maven Release plugin
   -->
   <scm>
-    <connection>scm:git:${project.scm.url}</connection>
-    <developerConnection>scm:git:${project.scm.url}</developerConnection>
-    <url>git@github.com:NTNU-IE-IIR/BlueJ-Linting-Core</url>
+    <connection>scm:git:https://github.com/NTNU-IE-IIR/BlueJ-Linting-Core.git</connection>
+    <developerConnection>scm:git:https://github.com/NTNU-IE-IIR/BlueJ-Linting-Core.git</developerConnection>
+    <url>https://github.com/NTNU-IE-IIR/BlueJ-Linting-Core</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -24,7 +24,7 @@
   BlueJ 5.1.0 uses the following versions of Java and JavaFX:
       Java: 17.0.4
       JavaFX: 17.0.3+2
- BlueJ 6.0.0 uses the following versions of Java and JavaFX:
+  BlueJ 6.0.0 uses the following versions of Java and JavaFX:
       Java: 21.0.6
       JavaFX: 23.0.2+3
 
