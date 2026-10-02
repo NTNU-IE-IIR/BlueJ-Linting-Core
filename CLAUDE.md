@@ -57,21 +57,25 @@ This library deliberately does no linting itself and holds no linter-specific co
 
 ## GitHub Actions
 
-There is a single workflow, `.github/workflows/release.yml`. It only triggers on a **pull request closed against `main`**, and every job is additionally gated on `github.event.pull_request.merged == true` — so nothing runs on a merely-closed/rejected PR, and nothing runs on ordinary pushes or PR-opened events. In other words: there is no CI build/check that runs while a PR is open; the only automation is what happens right after a PR merges into `main`.
+There are three workflows in `.github/workflows/`, and **all of them are `workflow_dispatch` only**. Nothing runs on push or on pull requests, so there is no CI check while a PR is open. They form a chain: `stage.yml` dispatches `publish.yml`, which dispatches `javadoc.yml`. All three build with Temurin Java 21 to match `pom.xml`. Bump `java-version` in all three if the compiler target changes.
 
-On merge, three jobs run in parallel:
+- **`stage.yml` — "Stage release with manually assigned versions".** Inputs: `releaseVersion` and `nextDevelopmentVersion`. The job is gated on `github.ref == 'refs/heads/develop'`, so if it's dispatched from any other branch the job is silently skipped. It checks out `develop` using the `SSH_PRIVATE_KEY` repo secret (a deploy key with write access; the `<scm>` URL in `pom.xml` is an SSH URL, so the release plugin pushes over SSH), commits as `github-actions[bot]`, and runs `mvn release:clean release:prepare release:perform` with `-Dmaven.javadoc.skip=true -Dmaven.deploy.skip=true`. Driven by the `maven-release-plugin` config in `pom.xml` (`tagNameFormat` `v@{project.version}`, `scmCommentPrefix` `[ci skip]`), this:
+  1. sets the `pom.xml` version to `releaseVersion`, commits it, and tags it `v<releaseVersion>`
+  2. sets the version to `nextDevelopmentVersion`, commits it, and pushes `develop` plus the tag
+  3. builds the tagged release (deploy is skipped, so nothing goes to a Maven repo)
 
-- **`create-release`** — runs `mvn -B package`, then reads the merged PR's source branch name (`github.event.pull_request.head.ref`) to derive a version string: a `release/<version>` or `hotfix/<version>` branch name has the prefix stripped to get `<version>`, exported as `RELEASE_VERSION`. It then publishes a GitHub Release tagged `v<RELEASE_VERSION>`, attaching the built jar matched by `./target/*-<RELEASE_VERSION>.jar`. If the PR's branch isn't named `release/...` or `hotfix/...`, neither "extract version" step runs, `RELEASE_VERSION` stays unset, and the release step will fail/misbehave — so this job only makes sense for release/hotfix PRs.
-- **`deploy-docs`** — runs `mvn javadoc:javadoc` and publishes `target/site/apidocs` to the `docs` branch (which GitHub Pages serves). This runs for **every** merged PR into `main`, not just release/hotfix ones, so Javadoc on the `docs` branch always tracks the latest `main`.
-- **`automerge`** — checks out `develop`, merges `main` into it with `--no-ff`, and pushes. Keeps `develop` from drifting behind `main` after a release/hotfix lands. This will fail (and needs manual conflict resolution) if `main` and `develop` have diverged in a conflicting way.
+  It then dispatches `publish.yml` on `main` with `tag_ref: v<releaseVersion>`.
+- **`publish.yml` — "Publish release".** Input: `tag_ref` (for example `v1.2.0`). It checks out `main`, runs `git merge <tag_ref>`, and pushes with the default `GITHUB_TOKEN`. It checks out with `fetch-depth: 0` and commits as `github-actions[bot]`, so it can create a real merge commit when `main` has commits that `develop` lacks (a conflicting merge still fails and has to be resolved by hand). It then runs `mvn -B package`, reads `project.version` via `mvn help:evaluate`, and creates a GitHub Release `v<version>` with `./target/*-<version>.jar` attached. Finally it dispatches `javadoc.yml` on `main`.
+- **`javadoc.yml` — "Publish Javadoc".** No inputs. It runs `mvn javadoc:javadoc` and deploys `target/site/apidocs` to the `docs` branch, which GitHub Pages serves. You can also run it by hand to refresh the docs without making a release.
+
+The jar on the GitHub Release is a convenience. Consumers actually resolve the library through JitPack, which builds from the `v<version>` git tag.
 
 ### How to cut a release
 
-1. Branch from `main` (or wherever the release should be cut from) named exactly `release/<version>` (e.g. `release/1.2.0`) for a normal release, or `hotfix/<version>` for a hotfix.
-2. Bump `<version>` in `pom.xml` to match the branch's `<version>` (the workflow does not do this for you — it only uses the branch name to name the GitHub Release and locate the jar via `target/*-<version>.jar`, which comes from the jar plugin using the `pom.xml` version).
-3. Open a PR into `main` and merge it. On merge, CI builds the jar, cuts a GitHub Release `v<version>` with the jar attached, redeploys Javadoc to the `docs` branch, and auto-merges `main` back into `develop`.
-
-Merging a PR into `main` from a branch not named `release/*` or `hotfix/*` will still run `deploy-docs` and `automerge`, but `create-release` will not produce a usable release (no version gets extracted).
+1. Make sure everything to be released is merged into `develop`. Ideally `main` has no commits that `develop` lacks, so `publish.yml`'s merge is a clean fast-forward.
+2. In GitHub → Actions → "Stage release with manually assigned versions", choose **Run workflow** on the `develop` branch. Enter the release version (for example `1.2.0`) and the next development version (for example `1.3.0-SNAPSHOT`). You don't need to edit `pom.xml` by hand.
+3. The chain runs automatically: `develop` gets the release and next-snapshot commits plus tag `v1.2.0`, `main` is fast-forwarded to the tag, a GitHub Release `v1.2.0` is created with the jar, and Javadoc is redeployed to `docs`.
+4. If a later step fails, re-run it by hand: `publish.yml` with `tag_ref: v<version>` (dispatched on `main`), or `javadoc.yml`.
 
 ## Scripts in `tools/`
 
