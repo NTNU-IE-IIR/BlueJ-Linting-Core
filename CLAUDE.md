@@ -12,7 +12,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for a full class diagram plus
 
 ```bash
 mvn package        # compile and produce the jar in target/
-mvn javadoc:javadoc # generate Javadoc into target/site/apidocs
+mvn javadoc:javadoc # generate Javadoc into target/reports/apidocs
 ```
 
 There is no test suite in this repo (no `src/test`), so there is no `mvn test` target to run.
@@ -66,7 +66,7 @@ There are three workflows in `.github/workflows/`, and **all of them are `workfl
 
   It then dispatches `publish.yml` on `main` with `tag_ref: v<releaseVersion>`.
 - **`publish.yml` — "Publish release".** Input: `tag_ref` (for example `v1.2.0`). It checks out `main`, runs `git merge <tag_ref>`, and pushes with the default `GITHUB_TOKEN`. It checks out with `fetch-depth: 0` and commits as `github-actions[bot]`, so it can create a real merge commit when `main` has commits that `develop` lacks (a conflicting merge still fails and has to be resolved by hand). It then runs `mvn -B package`, reads `project.version` via `mvn help:evaluate`, and creates a GitHub Release `v<version>` with `./target/*-<version>.jar` attached. Finally it dispatches `javadoc.yml` on `main`.
-- **`javadoc.yml` — "Publish Javadoc".** No inputs. It runs `mvn javadoc:javadoc` and deploys `target/site/apidocs` to the `docs` branch, which GitHub Pages serves. You can also run it by hand to refresh the docs without making a release.
+- **`javadoc.yml` — "Publish Javadoc".** No inputs. It runs `mvn javadoc:javadoc` and deploys `target/reports/apidocs` to the `docs` branch, which GitHub Pages serves. You can also run it by hand to refresh the docs without making a release.
 
 The jar on the GitHub Release is a convenience. Consumers actually resolve the library through JitPack, which builds from the `v<version>` git tag.
 
