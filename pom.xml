@@ -5,7 +5,7 @@
 
   <groupId>no.ntnu.iir.bluej.extensions.linting.core</groupId>
   <artifactId>bluej-linting-core</artifactId>
-  <version>v1.2.0</version>
+  <version>v1.3-SNAPSHOT</version>
 
   <name>bluej-linting-core</name>
   <url>https://github.com/NTNU-IE-IIR/BlueJ-Linting-Core</url>
@@ -17,7 +17,7 @@
     <connection>scm:git:https://github.com/NTNU-IE-IIR/BlueJ-Linting-Core.git</connection>
     <developerConnection>scm:git:https://github.com/NTNU-IE-IIR/BlueJ-Linting-Core.git</developerConnection>
     <url>https://github.com/NTNU-IE-IIR/BlueJ-Linting-Core</url>
-    <tag>vv1.2.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <!--
