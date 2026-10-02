@@ -24,11 +24,6 @@ jobs:
           ref: 'develop' 
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up SSH agent
-        uses: webfactory/ssh-agent@v0.9.1
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
       - name: Set GitHub Actions as commit author
         shell: bash
         run: |
