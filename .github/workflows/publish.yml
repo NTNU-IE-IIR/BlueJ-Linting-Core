@@ -16,11 +16,10 @@ jobs:
       - name: Git Checkout
         uses: actions/checkout@v3
 
-      - name: Merge release tag to main branch
+      - name: Checkout release tag
         run: |
-          git fetch
-          git merge ${{ inputs.tag_ref }}
-          git push
+          git fetch --all --tags
+          git checkout ${{ inputs.tag_ref }}
 
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -28,7 +27,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: 'maven'
-      
+       
       - name: Build with Maven
         run: mvn -B package --file pom.xml
 
@@ -37,7 +36,7 @@ jobs:
           VERSION=$( mvn help:evaluate -Dexpression=project.version -q -DforceStdout )
           echo "::set-output name=version::$VERSION"
         id: get_version
-      
+       
       - name: Upload release to GitHub Releases
         uses: softprops/action-gh-release@v1
         with: 
