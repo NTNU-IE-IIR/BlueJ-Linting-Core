@@ -24,10 +24,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Checkout release tag
+      # Needs the full history from fetch-depth: 0; with a shallow clone git
+      # can't find the merge base and fails with "unrelated histories".
+      - name: Merge release tag into main
         run: |
           git fetch --all --tags
-          git checkout ${{ inputs.tag_ref }}
+          git merge --no-edit ${{ inputs.tag_ref }}
+          git push origin main
+
+      - name: Checkout release tag
+        run: git checkout ${{ inputs.tag_ref }}
 
       - name: Set up Java
         uses: actions/setup-java@v5
