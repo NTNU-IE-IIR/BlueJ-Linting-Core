@@ -59,23 +59,30 @@ This library deliberately does no linting itself and holds no linter-specific co
 
 There are three workflows in `.github/workflows/`, and **all of them are `workflow_dispatch` only**. Nothing runs on push or on pull requests, so there is no CI check while a PR is open. They form a chain: `stage.yml` dispatches `publish.yml`, which dispatches `javadoc.yml`. All three build with Temurin Java 21 to match `pom.xml`. Bump `java-version` in all three if the compiler target changes.
 
-- **`stage.yml` — "Stage release with manually assigned versions".** Inputs: `releaseVersion` and `nextDevelopmentVersion`. The job is gated on `github.ref == 'refs/heads/develop'`, so if it's dispatched from any other branch the job is silently skipped. It checks out `develop` using the `SSH_PRIVATE_KEY` repo secret (a deploy key with write access; the `<scm>` URL in `pom.xml` is an SSH URL, so the release plugin pushes over SSH), commits as `github-actions[bot]`, and runs `mvn release:clean release:prepare release:perform` with `-Dmaven.javadoc.skip=true -Dmaven.deploy.skip=true`. Driven by the `maven-release-plugin` config in `pom.xml` (`tagNameFormat` `v@{project.version}`, `scmCommentPrefix` `[ci skip]`), this:
-  1. sets the `pom.xml` version to `releaseVersion`, commits it, and tags it `v<releaseVersion>`
+**GitHub runs a dispatched workflow from the file on the branch it is dispatched on.** `stage.yml` runs from `develop`, but `publish.yml` and `javadoc.yml` are dispatched on `main`, so `main`'s copies are the ones that run. Whenever you change a workflow file on `develop`, copy it to `main` too (`git checkout develop -- .github/workflows` on `main`). Otherwise the chain runs stale workflows. The v1.2.0 publish failed this way: `main` still had a Java 17 `publish.yml`.
+
+All pushes, tags, releases and dispatches use the default `GITHUB_TOKEN`; no secrets are needed. The repo setting **Settings → Actions → General → Workflow permissions** must be *Read and write*, and `develop` must accept pushes from `github-actions[bot]`.
+
+- **`stage.yml` — "Stage release with manually assigned versions".** Inputs: `releaseVersion` and `nextDevelopmentVersion`. The job is gated on `github.ref == 'refs/heads/develop'`, so if it's dispatched from any other branch the job is silently skipped. It checks out `develop`, commits as `github-actions[bot]`, and runs `mvn release:clean release:prepare release:perform` with `-Dmaven.javadoc.skip=true -Dmaven.deploy.skip=true`. The release plugin pushes over HTTPS (the `<scm>` URLs in `pom.xml`) with the token that `actions/checkout` stores in the git config. Driven by the `maven-release-plugin` config in `pom.xml` (`tagNameFormat` `v@{project.version}`, `scmCommentPrefix` `[ci skip]`), this:
+  1. runs `clean verify`, then sets the `pom.xml` version to `releaseVersion`, commits it, and tags it `v<releaseVersion>`
   2. sets the version to `nextDevelopmentVersion`, commits it, and pushes `develop` plus the tag
-  3. builds the tagged release (deploy is skipped, so nothing goes to a Maven repo)
+  3. clones the tag into `target/checkout` and builds it (deploy is skipped, so nothing goes to a Maven repo; this only verifies the tagged code builds)
 
   It then dispatches `publish.yml` on `main` with `tag_ref: v<releaseVersion>`.
-- **`publish.yml` — "Publish release".** Input: `tag_ref` (for example `v1.2.0`). It checks out `main`, runs `git merge <tag_ref>`, and pushes with the default `GITHUB_TOKEN`. It checks out with `fetch-depth: 0` and commits as `github-actions[bot]`, so it can create a real merge commit when `main` has commits that `develop` lacks (a conflicting merge still fails and has to be resolved by hand). It then runs `mvn -B package`, reads `project.version` via `mvn help:evaluate`, and creates a GitHub Release `v<version>` with `./target/*-<version>.jar` attached. Finally it dispatches `javadoc.yml` on `main`.
-- **`javadoc.yml` — "Publish Javadoc".** No inputs. It runs `mvn javadoc:javadoc` and deploys `target/reports/apidocs` to the `docs` branch, which GitHub Pages serves. You can also run it by hand to refresh the docs without making a release.
+- **`publish.yml` — "Publish release".** Input: `tag_ref` (for example `v1.2.0`). It checks out `main`, then `git checkout <tag_ref>` (detached HEAD). It does **not** merge into or push `main`, so `main` does not receive release commits automatically. It runs `mvn -B package`, reads `project.version` via `mvn help:evaluate`, and creates a GitHub Release `v<version>` on the existing tag with `./target/*-<version>.jar` attached and the placeholder body `**Changes:**`. Finally it dispatches `javadoc.yml` on `main`.
+- **`javadoc.yml` — "Publish Javadoc".** No inputs. It checks out `main` (not the release tag), runs `mvn javadoc:javadoc` and deploys `target/reports/apidocs` to the `docs` branch, which GitHub Pages serves. The published Javadoc therefore reflects `main`, not necessarily the latest release. You can also run it by hand to refresh the docs without making a release.
 
-The jar on the GitHub Release is a convenience. Consumers actually resolve the library through JitPack, which builds from the `v<version>` git tag.
+### JitPack
+
+The jar on the GitHub Release is a convenience. Consumers (the Checkstyle and SonarLint plugins) resolve the library through JitPack (`https://jitpack.io` repository in their `pom.xml`), which clones this repo at the requested git tag and builds it on its own servers. `jitpack.yml` in the repo root pins JitPack's build JDK to 21. Without it, JitPack uses an old default JDK and fails on `maven.compiler.release=21`. Keep it in sync with the Java target. None of the workflows talk to JitPack; it builds lazily the first time a consumer asks for a version. Check `https://jitpack.io/#NTNU-IE-IIR/BlueJ-Linting-Core` after a release.
 
 ### How to cut a release
 
-1. Make sure everything to be released is merged into `develop`. Ideally `main` has no commits that `develop` lacks, so `publish.yml`'s merge is a clean fast-forward.
-2. In GitHub → Actions → "Stage release with manually assigned versions", choose **Run workflow** on the `develop` branch. Enter the release version (for example `1.2.0`) and the next development version (for example `1.3.0-SNAPSHOT`). You don't need to edit `pom.xml` by hand.
-3. The chain runs automatically: `develop` gets the release and next-snapshot commits plus tag `v1.2.0`, `main` is fast-forwarded to the tag, a GitHub Release `v1.2.0` is created with the jar, and Javadoc is redeployed to `docs`.
-4. If a later step fails, re-run it by hand: `publish.yml` with `tag_ref: v<version>` (dispatched on `main`), or `javadoc.yml`.
+1. Make sure everything to be released is merged into `develop` and that `mvn clean verify` passes locally (`release:prepare` runs the same build). Make sure `main`'s `.github/workflows/` match `develop`'s (see above). If you want the published Javadoc to match the release, merge `develop` into `main` first.
+2. In GitHub → Actions → "Stage release with manually assigned versions", choose **Run workflow** with **Use workflow from: `develop`**. Enter the release version **without a `v` prefix** (for example `1.3.0`; the tag format adds the `v`, and typing it yourself gives `vv1.3.0`) and the next development version (for example `1.4.0-SNAPSHOT`). You don't need to edit `pom.xml` by hand; the inputs override whatever snapshot version it has.
+3. The chain runs automatically: `develop` gets the release and next-snapshot commits plus tag `v1.3.0`, a GitHub Release `v1.3.0` is created with the jar, and Javadoc is redeployed to `docs` from `main`.
+4. Afterwards: edit the release notes (the body is only a placeholder), `git pull` on `develop` to get the bot commits, and check that JitPack builds the new tag.
+5. If a later step fails, don't re-run `stage.yml` once the tag has been pushed. Instead re-run the failed step by hand: `publish.yml` with `tag_ref: v<version>` (dispatched on `main`), or `javadoc.yml` (on `main`).
 
 ## Scripts in `tools/`
 
