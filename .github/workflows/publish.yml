@@ -57,6 +57,9 @@ jobs:
           tag_name: v${{ steps.get_version.outputs.version }}
           name: v${{ steps.get_version.outputs.version }}
           body: "**Changes:**"
+          # On a re-run for an existing release, append the placeholder
+          # instead of overwriting release notes that were already written.
+          append_body: true
           files: ./target/*-${{ steps.get_version.outputs.version }}.jar
 
       - name: Trigger javadoc workflow
