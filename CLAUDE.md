@@ -19,9 +19,9 @@ There is no test suite in this repo (no `src/test`), so there is no `mvn test` t
 
 ### Dependency notes
 
-- `bluejext2` (BlueJ's extension API jar) is **not on Maven Central**. It's resolved from the `lib/` directory, which is configured as a local Maven repository (`repositories` block in `pom.xml`, id `local_repository`). If this dependency fails to resolve, check `lib/bluej/bluejext2/`.
+- BlueJ's extension API (Extension API 2, shipped inside BlueJ's `bluej.jar`) is **not on Maven Central**. It's declared as `bluej:bluej:6.0.0` and resolved from the `lib/` directory, which is configured as a local Maven repository (`repositories` block in `pom.xml`, id `local_repository`). If this dependency fails to resolve, check `lib/bluej/bluej/<version>/`, and repopulate it with the scripts in `tools/` (see below).
 - JavaFX (`javafx-controls`, `javafx-web`) is declared with `<scope>provided</scope>` because BlueJ bundles its own JavaFX runtime at runtime. The `javafx.version` property is pinned to the closest available Maven version to what BlueJ actually ships (see the comment block at the top of `pom.xml` for the exact BlueJ-bundled Java/JavaFX versions this targets).
-- Java target is 21 (`maven.compiler.source`/`target`), matching BlueJ 6.0.0's bundled JDK (BlueJ 6.0.0 ships Java 21.0.6 / JavaFX 23.0.2+3; `javafx.version` is set to `23.0.2`).
+- Java target is 21 (`maven.compiler.release`), matching BlueJ 6.0.0's bundled JDK (BlueJ 6.0.0 ships Java 21.0.6 / JavaFX 23.0.2+3; `javafx.version` is set to `23.0.2`).
 - This library itself is not published to Maven Central (BlueJ artifacts can't be); consumers use [JitPack](https://jitpack.io/#NTNU-IE-IIR/BlueJ-Linting-Core) instead.
 
 ## Architecture
@@ -88,7 +88,7 @@ The jar on the GitHub Release is a convenience. Consumers (the Checkstyle and So
 
 Both scripts do the same thing — install BlueJ's bundled `bluej.jar` into this project's local Maven repository at `lib/` (the `local_repository` in `pom.xml`) via `mvn install:install-file` — one per OS, since BlueJ's own install layout differs between them:
 
-- **`updateBlueJdeps.ps1`** (Windows/PowerShell) — reads the jar from `C:\Program Files\BlueJ\lib\bluejext2.jar`. Usage: `./updateBlueJdeps.ps1 -Version <n.n.n>`.
-- **`updateBlueJdeps.sh`** (macOS/zsh) — same behavior, ported for macOS where BlueJ ships as a `.app` bundle (via jpackage) rather than a fixed Program Files path. Usage: `./updateBlueJdeps.sh <version> [installDir]`. Since the exact jar location inside `BlueJ.app` can vary by release, it searches a few common candidate paths under `/Applications/BlueJ.app` and `~/Applications/BlueJ.app` and falls back to erroring out with instructions to pass the correct directory as `[installDir]` if none are found — confirm the real path with `find /Applications/BlueJ.app -name 'bluejext2.jar'` if the default search fails.
+- **`updateBlueJdeps.ps1`** (Windows/PowerShell) — reads the jar from `C:\Program Files\BlueJ\lib\bluej.jar`. Usage: `./updateBlueJdeps.ps1 -Version <n.n.n>`.
+- **`updateBlueJdeps.sh`** (macOS/zsh) — same behavior, ported for macOS where BlueJ ships as a `.app` bundle (via jpackage) rather than a fixed Program Files path. Usage: `./updateBlueJdeps.sh <version> [installDir]`. Since the exact jar location inside `BlueJ.app` can vary by release, it searches a few common candidate paths under `/Applications/BlueJ.app` and `~/Applications/BlueJ.app` and falls back to erroring out with instructions to pass the correct directory as `[installDir]` if none are found — confirm the real path with `find /Applications/BlueJ.app -name 'bluej.jar'` if the default search fails.
 
 Run either script whenever `pom.xml`'s `bluej` version is bumped to match a newer BlueJ install, so the local jar in `lib/` stays in sync with what the `pom.xml` dependency declares.
